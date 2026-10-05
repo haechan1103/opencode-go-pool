@@ -1,0 +1,10 @@
+{
+  "enabled": true,
+  "accounts": ["A", "B", "C"],
+  "models": ["deepseek-v4.1-flash", "glm-5.3-flash", "kimi-k3", "minimax-m3", "gpt-6-luna"],
+  "polling": {
+    "idleMinutes": 60,
+    "activeMinutes": 10,
+    "activeWindowMinutes": 20
+  }
+}

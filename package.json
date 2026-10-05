@@ -1,0 +1,20 @@
+{
+  "name": "opencode-go-pool",
+  "version": "0.1.0",
+  "description": "Multi-account OpenCode Go model routing with usage-aware failover.",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "exports": { ".": "./src/plugin.js" },
+  "bin": { "opencode-go-pool": "./bin/cli.js" },
+  "files": ["src", "bin", "catalog", "README.md", "LICENSE", "THIRD_PARTY_NOTICES"],
+  "scripts": {
+    "test": "node --test",
+    "check": "node scripts/check.mjs && npm test && npm run check:secrets",
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "catalog:update": "node scripts/update-catalog.mjs",
+    "prepack": "npm run check"
+  },
+  "dependencies": { "@opencode-ai/plugin": "^1.18.33" },
+  "devDependencies": { "smol-toml": "^1.4.2" }
+}
