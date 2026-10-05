@@ -6,5 +6,11 @@
     "idleMinutes": 60,
     "activeMinutes": 10,
     "activeWindowMinutes": 20
+  },
+  "cooldowns": {
+    "quota": 10,
+    "auth": 15,
+    "rate": 5,
+    "service": 2
   }
 }

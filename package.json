@@ -7,7 +7,7 @@
   "engines": { "node": ">=22" },
   "exports": { ".": "./src/plugin.js" },
   "bin": { "opencode-go-pool": "./bin/cli.js" },
-  "files": ["src", "bin", "catalog", "README.md", "LICENSE", "THIRD_PARTY_NOTICES"],
+  "files": ["src", "bin", "catalog", "docs", "README.md", "LICENSE", "THIRD_PARTY_NOTICES"],
   "scripts": {
     "test": "node --test",
     "check": "node scripts/check.mjs && npm test && npm run check:secrets",

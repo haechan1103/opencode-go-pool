@@ -144,12 +144,14 @@ export class Pool {
     return null;
   }
   async failed(item, modelID, kind) {
+    const { cooldowns } = await this.settings();
+    if (!Object.hasOwn(cooldowns, kind)) return;
     await this.mutate(state => {
       const now = this.clock();
       if (kind === 'auth' || kind === 'quota') {
         const reset = kind === 'quota' ? blockedUntil(this.cache.accounts[item.id]) : 0;
-        state.accountLimits[item.id] = { kind, until: reset > now ? reset : now + (kind === 'auth' ? 15 : 10) * MINUTE };
-      } else state.modelLimits[`${item.id}/${modelID}`] = { kind, until: now + (kind === 'rate' ? 5 : 2) * MINUTE };
+        state.accountLimits[item.id] = { kind, until: reset > now ? reset : now + cooldowns[kind] * MINUTE };
+      } else state.modelLimits[`${item.id}/${modelID}`] = { kind, until: now + cooldowns[kind] * MINUTE };
     });
   }
   start() {

@@ -35,6 +35,11 @@ export async function loadSettings(file, overrides = {}) {
   const accounts = [...new Set(ids.map(id => account(id).id))].map(account);
   const timings = { idleMinutes: 60, activeMinutes: 10, activeWindowMinutes: 20, ...raw.polling };
   for (const value of Object.values(timings)) if (!Number.isFinite(value) || value < 1 || value > 1440) throw new Error('Polling intervals must be between 1 and 1440 minutes.');
+  if (raw.cooldowns !== undefined && (!raw.cooldowns || typeof raw.cooldowns !== 'object' || Array.isArray(raw.cooldowns))) throw new Error('cooldowns must be an object of minute values.');
+  const cooldowns = { quota: 10, auth: 15, rate: 5, service: 2, ...raw.cooldowns };
+  for (const [kind, value] of Object.entries(cooldowns)) {
+    if (!['quota', 'auth', 'rate', 'service'].includes(kind) || !Number.isFinite(value) || value < 1 || value > 1440) throw new Error('Cooldowns must use quota/auth/rate/service with values between 1 and 1440 minutes.');
+  }
   if (raw.models !== undefined && (!Array.isArray(raw.models) || raw.models.some(id => typeof id !== 'string'))) throw new Error('models must be an array of model IDs.');
-  return { enabled: raw.enabled !== false, accounts, models: raw.models, polling: timings };
+  return { enabled: raw.enabled !== false, accounts, models: raw.models, polling: timings, cooldowns };
 }

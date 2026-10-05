@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { Pool, due, classify } from '../src/pool.js';
 import { account, writeJSON, readJSON, loadSettings, MINUTE } from '../src/config.js';
 import { parseUsage, fetchUsage } from '../src/usage.js';
@@ -139,6 +140,38 @@ test('multiple pools share poll cache and do not lose concurrent cooldown mutati
   assert.equal(state.modelLimits['A/kimi-k3'].kind,'rate');
   assert.equal(state.modelLimits['C/kimi-k3'].kind,'service');
   assert.equal((await readFile(f.files.usage,'utf8')).includes('fake-'),false);
+});
+
+test('editable cooldowns apply to new errors but cannot shorten a confirmed quota reset', async t => {
+  const f = await fixture(t);
+  await writeJSON(f.files.config, { accounts: ['A', 'B', 'C'], cooldowns: { quota: 3, auth: 4, rate: 1, service: 6 } });
+  await f.pool.refresh();
+  await f.pool.failed(account('A'), 'kimi-k3', 'auth');
+  assert.equal(f.pool.state.accountLimits.A.until, f.now() + 4 * MINUTE);
+  await f.pool.failed(account('A'), 'kimi-k3', 'rate');
+  assert.equal(f.pool.state.modelLimits['A/kimi-k3'].until, f.now() + MINUTE);
+  await f.pool.failed(account('C'), 'kimi-k3', 'quota');
+  assert.equal(f.pool.state.accountLimits.C.until, f.now() + 3 * MINUTE);
+  await f.pool.failed(account('B'), 'kimi-k3', 'quota');
+  assert.equal(f.pool.state.accountLimits.B.until, f.now() + 60 * MINUTE);
+  for (const cooldowns of [{ auth: 0 }, { rate: 1441 }, { service: '5' }, { unknown: 1 }, []]) {
+    await writeJSON(f.files.config, { accounts: ['A'], cooldowns });
+    await assert.rejects(loadSettings(f.files.config), /cooldowns|Cooldowns/);
+  }
+});
+
+test('config command shows the actual path and editable defaults without raw unknown fields', async t => {
+  const f = await fixture(t);
+  await writeJSON(f.files.config, { accounts: ['A'], apiKey: 'DO_NOT_PRINT', cooldowns: { auth: 3 } });
+  const result = spawnSync(process.execPath, ['bin/cli.js', 'config'], {
+    cwd: new URL('../', import.meta.url),
+    env: { ...process.env, OPENCODE_GO_POOL_CONFIG: f.files.config }, encoding: 'utf8',
+  });
+  assert.equal(result.status, 0);
+  assert.ok(result.stdout.includes(f.files.config));
+  assert.ok(result.stdout.includes('"auth": 3'));
+  assert.ok(result.stdout.includes('"idleMinutes": 60'));
+  assert.equal(result.stdout.includes('DO_NOT_PRINT'), false);
 });
 
 test('hooks register distinct SDKs, retain model/variant/attachment and stop repeated account attempts', async t => {

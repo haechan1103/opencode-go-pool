@@ -26,13 +26,19 @@ async function main() {
   const [command = 'help', id, ...extra] = process.argv.slice(2);
   const file = paths().config;
   if (command === 'help' || command === '--help') {
-    console.log('opencode-go-pool add ACCOUNT [--replace]\nopencode-go-pool remove ACCOUNT\nopencode-go-pool status\nopencode-go-pool usage [ACCOUNT]\nopencode-go-pool models'); return;
+    console.log('opencode-go-pool add ACCOUNT [--replace]\nopencode-go-pool remove ACCOUNT\nopencode-go-pool status\nopencode-go-pool usage [ACCOUNT]\nopencode-go-pool models\nopencode-go-pool config'); return;
   }
   if (command === 'models') {
     for (const [modelID, model] of Object.entries(catalog.models)) console.log(`${modelID}\t${model.name}\t${model.modalities?.input?.join(',') || 'text'}`);
     return;
   }
   const settings = await loadSettings(file);
+  if (command === 'config') {
+    if (id || extra.length) throw new Error('Usage: opencode-go-pool config');
+    console.log(`Config file: ${file}`);
+    console.log(JSON.stringify({ ...settings, accounts: settings.accounts.map(a => a.id) }, null, 2));
+    return;
+  }
   if (command === 'add') {
     if (!id || extra.some(value => value !== '--replace')) throw new Error('Usage: opencode-go-pool add ACCOUNT [--replace]');
     const item = account(id);
